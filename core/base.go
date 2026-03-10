@@ -353,6 +353,25 @@ func (app *BaseApp) UnsafeWithoutHooks() App {
 	return &clone
 }
 
+// WithContext returns a shallow copy of the current app with its database
+// connections associated with the provided context.
+func (app *BaseApp) WithContext(ctx context.Context) App {
+	clone := *app
+	if db, ok := app.concurrentDB.(*dbx.DB); ok {
+		clone.concurrentDB = db.WithContext(ctx)
+	}
+	if db, ok := app.nonconcurrentDB.(*dbx.DB); ok {
+		clone.nonconcurrentDB = db.WithContext(ctx)
+	}
+	if db, ok := app.auxConcurrentDB.(*dbx.DB); ok {
+		clone.auxConcurrentDB = db.WithContext(ctx)
+	}
+	if db, ok := app.auxNonconcurrentDB.(*dbx.DB); ok {
+		clone.auxNonconcurrentDB = db.WithContext(ctx)
+	}
+	return &clone
+}
+
 // Logger returns the default app logger.
 //
 // If the application is not bootstrapped yet, fallbacks to slog.Default().
