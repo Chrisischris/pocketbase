@@ -98,7 +98,8 @@ jobs:
             exit 1
           fi
           git tag -a "${OTEL_TAG}" -m "${UPSTREAM_TAG} + OTel WithContext DB span propagation"
-          git push origin "HEAD:refs/heads/otel-${UPSTREAM_TAG}"
+          # Replace any leftover placeholder branch from prior attempts.
+          git push --force origin "HEAD:refs/heads/otel-${UPSTREAM_TAG}"
           git push origin "refs/tags/${OTEL_TAG}"
           echo "Created ${OTEL_TAG}"
           git rev-parse "${OTEL_TAG}^{}"
