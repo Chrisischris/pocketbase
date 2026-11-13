@@ -1,0 +1,104 @@
+name: mint-otel-tag
+
+on:
+  push:
+    branches: [actions/mint-v0.39.11-otel]
+  workflow_dispatch:
+
+jobs:
+  mint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Mint v0.39.11-otel
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          UPSTREAM_TAG=v0.39.11
+          OTEL_TAG=v0.39.11-otel
+
+          git clone --branch "$UPSTREAM_TAG" --depth 1 https://github.com/pocketbase/pocketbase.git work
+          cd work
+
+          python3 <<'PY'
+          from pathlib import Path
+
+          app = Path('core/app.go')
+          text = app.read_text()
+          needle = '\tUnsafeWithoutHooks() App\n\n\t// Logger returns the default app logger.'
+          insert = (
+              "\tUnsafeWithoutHooks() App\n\n"
+              "\t// WithContext returns a shallow copy of the current app with its database\n"
+              "\t// connections associated with the provided context. This allows database\n"
+              "\t// spans to be children of the current trace span.\n"
+              "\tWithContext(ctx context.Context) App\n\n"
+              "\t// Logger returns the default app logger."
+          )
+          if 'WithContext(ctx context.Context) App' not in text:
+              if needle not in text:
+                  raise SystemExit('core/app.go: insertion point not found')
+              app.write_text(text.replace(needle, insert, 1))
+
+          base = Path('core/base.go')
+          text = base.read_text()
+          if 'func (app *BaseApp) WithContext(ctx context.Context) App' not in text:
+              needle = (
+                  "func (app *BaseApp) UnsafeWithoutHooks() App {\n"
+                  "\tclone := *app\n\n"
+                  "\t// reset all hook handlers\n"
+                  "\tclone.initHooks()\n\n"
+                  "\treturn &clone\n"
+                  "}\n\n"
+                  "// Logger returns the default app logger."
+              )
+              insert = (
+                  "func (app *BaseApp) UnsafeWithoutHooks() App {\n"
+                  "\tclone := *app\n\n"
+                  "\t// reset all hook handlers\n"
+                  "\tclone.initHooks()\n\n"
+                  "\treturn &clone\n"
+                  "}\n\n"
+                  "// WithContext returns a shallow copy of the current app with its database\n"
+                  "// connections associated with the provided context.\n"
+                  "func (app *BaseApp) WithContext(ctx context.Context) App {\n"
+                  "\tclone := *app\n"
+                  "\tif db, ok := app.concurrentDB.(*dbx.DB); ok {\n"
+                  "\t\tclone.concurrentDB = db.WithContext(ctx)\n"
+                  "\t}\n"
+                  "\tif db, ok := app.nonconcurrentDB.(*dbx.DB); ok {\n"
+                  "\t\tclone.nonconcurrentDB = db.WithContext(ctx)\n"
+                  "\t}\n"
+                  "\tif db, ok := app.auxConcurrentDB.(*dbx.DB); ok {\n"
+                  "\t\tclone.auxConcurrentDB = db.WithContext(ctx)\n"
+                  "\t}\n"
+                  "\tif db, ok := app.auxNonconcurrentDB.(*dbx.DB); ok {\n"
+                  "\t\tclone.auxNonconcurrentDB = db.WithContext(ctx)\n"
+                  "\t}\n"
+                  "\treturn &clone\n"
+                  "}\n\n"
+                  "// Logger returns the default app logger."
+              )
+              if needle not in text:
+                  raise SystemExit('core/base.go: insertion point not found')
+              base.write_text(text.replace(needle, insert, 1))
+          print('patch applied')
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add core/app.go core/base.go
+          git commit -m "Add WithContext for OTel DB span propagation"
+
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/Chrisischris/pocketbase.git"
+          if git ls-remote --tags origin "refs/tags/${OTEL_TAG}" | grep -q .
+          then
+            echo "Refusing to overwrite existing tag ${OTEL_TAG}" >&2
+            exit 1
+          fi
+          git tag -a "${OTEL_TAG}" -m "${UPSTREAM_TAG} + OTel WithContext DB span propagation"
+          git push origin "HEAD:refs/heads/otel-${UPSTREAM_TAG}"
+          git push origin "refs/tags/${OTEL_TAG}"
+          echo "Created ${OTEL_TAG}"
+          git rev-parse "${OTEL_TAG}^{}"
