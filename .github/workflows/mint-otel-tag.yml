@@ -86,9 +86,13 @@ jobs:
           print('patch applied')
           PY
 
+          # GITHUB_TOKEN cannot create/update workflow files. Drop upstream workflows
+          # so the mint push is allowed (Spore only needs the Go module sources).
+          rm -rf .github/workflows
+          git add -A
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add core/app.go core/base.go
           git commit -m "Add WithContext for OTel DB span propagation"
 
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/Chrisischris/pocketbase.git"
@@ -98,8 +102,8 @@ jobs:
             exit 1
           fi
           git tag -a "${OTEL_TAG}" -m "${UPSTREAM_TAG} + OTel WithContext DB span propagation"
-          # Replace any leftover placeholder branch from prior attempts.
-          git push --force origin "HEAD:refs/heads/otel-${UPSTREAM_TAG}"
+          # Push the tag first (commit travels with the tag). Branch is optional metadata.
           git push origin "refs/tags/${OTEL_TAG}"
+          git push --force origin "HEAD:refs/heads/otel-${UPSTREAM_TAG}" || true
           echo "Created ${OTEL_TAG}"
           git rev-parse "${OTEL_TAG}^{}"
