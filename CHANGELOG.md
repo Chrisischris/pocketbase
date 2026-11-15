@@ -2,6 +2,8 @@
 
 - Increased the auto `VACUUM` deleted logs threshold to 50k to avoid unnecessery running too often.
 
+- Explicitly check for error body in the [S3 CompleteMultipartUpload call](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html) because chunks post-processing can still fail even with 200 responses.
+
 
 ## v0.42.2
 
