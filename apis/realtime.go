@@ -200,21 +200,6 @@ func realtimeSetSubscriptions(e *core.RequestEvent) error {
 		return e.NotFoundError("Missing or invalid client id.", err)
 	}
 
-	// for just in case to prevent someone changing a guest subscription
-	//
-	// note1: this is an extra precaution against clientId bruteforce attempts
-	// for installations allowing longer realtime connections duration
-	//
-	// note2: custom registered clients (aka. those without IP in the store)
-	// are excluded from the check for backward compatibility
-	clientIP, _ := client.Get(RealtimeClientIPKey).(string)
-	if clientIP != "" && clientIP != e.RealIP() {
-		return e.BadRequestError(
-			"Invalid realtime client.",
-			errors.New("the subscription request IP doesn't match with the realtime client IP"),
-		)
-	}
-
 	// for now allow only guest->auth upgrades and any other auth change is forbidden
 	clientAuth, _ := client.Get(RealtimeClientAuthKey).(*core.Record)
 	if clientAuth != nil && !isSameAuth(clientAuth, e.Auth) {
