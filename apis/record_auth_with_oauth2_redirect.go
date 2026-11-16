@@ -57,13 +57,21 @@ func oauth2SubscriptionRedirect(e *core.RequestEvent) error {
 
 	// additional check to minimize the risk of XSRF attack vectors
 	//
-	// note: custom registered clients (aka. those without IP in the store)
+	// note1: custom registered clients (aka. those without RealtimeClientIPKey in the store)
 	// are excluded from the check for backward compatibility
-	clientIP, _ := client.Get(RealtimeClientIPKey).(string)
-	if clientIP != "" && clientIP != e.RealIP() {
+	//
+	// note2: the extra subscriptionClientIP check is performed as fallback
+	// to minimize false-positives in case Google/Apple app reviewers use virtualized
+	// devices with multiple network interfaces during the OAuth2 "All in one" flow
+	// (https://ganigeorgiev.com/pocketbase/discussions/7758#comment-7ccdsr6gi1nd0y3)
+	realIP := e.RealIP()
+	connectionClientIP, _ := client.Get(RealtimeClientIPKey).(string)
+	subscriptionClientIP, _ := client.Get(RealtimeOAuth2SubscriptionClientIPKey).(string)
+	if connectionClientIP != "" && (realIP != connectionClientIP && realIP != subscriptionClientIP) {
 		e.App.Logger().Warn(
-			"The client IP that completed the authentication is different from the one that initialized the OAuth2 realtime connection",
-			"originalClientIP", clientIP,
+			"The client IP that completed the authentication is different from the one that initialized the OAuth2 realtime connection/subscription",
+			"connectionClientIP", connectionClientIP,
+			"subscriptionClientIP", subscriptionClientIP,
 			"redirectClientIP", e.RealIP(),
 		)
 		return failureRedirect(e)
