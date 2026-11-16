@@ -15,6 +15,8 @@
     _Since v0.38.2 realtime connections are also restricted to max 30min by default no matter whether they are idle or not forcing the client id to reset on reconnect which further makes such enumaration related attacks very unlikely._
     _You can technically also completely disable all realtime IP checks as shown in the related discussion but I'd advice against doing that unless you have a very good reason._
 
+- Bumped `golang.org/x/*` dependencies.
+
 
 ## v0.42.2
 

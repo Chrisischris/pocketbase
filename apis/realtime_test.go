@@ -253,7 +253,8 @@ func TestRealtimeSubscribe(t *testing.T) {
 					t.Fatalf("Expected to find only subscription 'test', got %v", subscriptions)
 				}
 
-				if fallback := client.Get(apis.RealtimeOAuth2SubscriptionClientIPKey); fallback != nil {
+				fallback := client.Get(apis.RealtimeOAuth2SubscriptionClientIPKey)
+				if fallback != nil {
 					t.Fatalf("Expected empty @oauth2 subscription IP to be stored, got %v", fallback)
 				}
 			},

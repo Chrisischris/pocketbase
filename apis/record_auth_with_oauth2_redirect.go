@@ -72,7 +72,7 @@ func oauth2SubscriptionRedirect(e *core.RequestEvent) error {
 			"The client IP that completed the authentication is different from the one that initialized the OAuth2 realtime connection/subscription",
 			"connectionClientIP", connectionClientIP,
 			"subscriptionClientIP", subscriptionClientIP,
-			"redirectClientIP", e.RealIP(),
+			"redirectClientIP", realIP,
 		)
 		return failureRedirect(e)
 	}
