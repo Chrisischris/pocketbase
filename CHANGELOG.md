@@ -4,6 +4,10 @@
 
 - Explicitly check for error body in the [S3 CompleteMultipartUpload call](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html) because chunks post-processing can still fail even with 200 responses.
 
+- Added `write error: client disconnected` to the benign log errors list.
+
+- Added `.webm` to the superuser UI allowed video preview extensions.
+
 - Changed the OAuth2 redirect failure logs from DEBUG to WARN level for better visibility.
 
 - Relaxed the extra IP realtime check to allow subscription requests for a single client to originate from different IPs ([#7758](https://ganigeorgiev.com/pocketbase/discussions/7758#comment-7ccdsr6gi1nd0y3)).
