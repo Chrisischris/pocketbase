@@ -1,4 +1,4 @@
-## v0.42.3 (WIP)
+## v0.42.3
 
 - Increased the auto `VACUUM` deleted logs threshold to 50k to avoid unnecessery running too often.
 
@@ -6,7 +6,7 @@
 
 - Added `write error: client disconnected` to the benign log errors list.
 
-- Added `.webm` to the superuser UI allowed video preview extensions.
+- Added `.webm` to the UI video extensions list.
 
 - Changed the OAuth2 redirect failure logs from DEBUG to WARN level for better visibility.
 
