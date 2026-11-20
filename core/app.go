@@ -33,6 +33,11 @@ type App interface {
 	// rely on the app hooks to work.
 	UnsafeWithoutHooks() App
 
+	// WithContext returns a shallow copy of the current app with its database
+	// connections associated with the provided context. This allows database
+	// spans to be children of the current trace span.
+	WithContext(ctx context.Context) App
+
 	// Logger returns the default app logger.
 	//
 	// If the application is not bootstrapped yet, fallbacks to slog.Default().
